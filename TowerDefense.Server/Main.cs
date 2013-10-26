@@ -20,7 +20,7 @@ namespace TowerDefense.Server
 			
 		}
 			
-		private Cell CreateCell(int x, int y, Grid<Cell> list)
+		private new static Cell CreateCell(int x, int y, Grid<Cell> list)
 		{
 			return new Cell(x, y, list);
 		}

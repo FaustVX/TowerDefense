@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -37,15 +37,15 @@
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\..\CSharpHelper\CSharpHelper.csproj">
-      <Project>{4603ED6E-4395-4866-BFDD-75363B3801AE}</Project>
-      <Name>CSharpHelper</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\UDP\UDP\UDP.csproj">
+    <ProjectReference Include="..\..\..\C#\UDP\UDP\UDP.csproj">
       <Project>{1BAE289B-24F4-4E42-80F2-60A7C3C8AB73}</Project>
       <Name>UDP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\CSharpHelper\CSharpHelper\CSharpHelper.csproj">
+      <Project>{4603ED6E-4395-4866-BFDD-75363B3801AE}</Project>
+      <Name>CSharpHelper</Name>
+    </ProjectReference>
   </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
