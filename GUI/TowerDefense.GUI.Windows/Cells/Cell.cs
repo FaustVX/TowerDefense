@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using CSharpHelper;
+using TowerDefense.GUI.Windows.Textures;
 
 namespace TowerDefense.GUI.Windows.Cells
 {
 #if (DEBUG)
+	using System.Diagnostics;
 	public class CellProxy
 	{
 		private readonly Cell _cell;
@@ -35,19 +37,18 @@ namespace TowerDefense.GUI.Windows.Cells
 #endif
 	public class Cell : Cell<Cell>, Grid<Cell>.IPathCell
 	{
-		private static readonly Random Rnd = new Random();
-		private BoardCell _innerCell;
-		//private static readonly double s, f;
-		//private static readonly bool os, of;
+		private static readonly Random Rnd;
+		private IBoardCell _innerCell;
+		private static readonly double _s, _f;
 		public static Cell Start, Goal;
 
-		//static Cell()
-		//{
-		//	//s = Rnd.NextDouble();
-		//	//f = Rnd.NextDouble();
-		//	//os = Rnd.Next(20) < 10;
-		//	//of = Rnd.Next(20) < 10;
-		//}
+		static Cell()
+		{
+			Rnd = Program.Random;
+
+			_s = Rnd.NextDouble();
+			_f = Rnd.NextDouble();
+		}
 
 		/// <summary>
 		/// Constructeur de la  cellule
@@ -58,64 +59,65 @@ namespace TowerDefense.GUI.Windows.Cells
 		public Cell(int x, int y, Grid<Cell> list)
 			: base(x, y, list, false)
 		{
-			if (x == 0 && y == 0)
+			InnerCell = new GroundCell();
+
+			switch (Rnd.Next(8))
 			{
-				InnerCell = new StartCell();
-				Start = this;
+				case 1:
+					InnerCell = new Tower1Cell();
+					break;
+				case 2:
+					InnerCell = new FreezeCell();
+					break;
+				default:
+					InnerCell = new GroundCell();
+					break;
 			}
-			else if (x == list.Width - 1 && y == list.Height - 1)
+
+			if (x == 0)
 			{
-				InnerCell = new GoalCell();
-				Goal = this;
-			}
-			else if (x <= 3 && y <= 3)
-				InnerCell = new GroundCell();
-			else if (x >= list.Width - 4 && y >= list.Height - 4)
-				InnerCell = new GroundCell();
-			else
-			{
-				//InnerCell = new GroundCell();
-				switch (Rnd.Next(8))
+				if (y == (int)(_s * list.Height))
 				{
-					case 1:
-						InnerCell = new Tower1Cell();
-						break;
-					case 2:
-						InnerCell = new Tower2Cell();
-						break;
-					case 3:
-						InnerCell = new FreezeCell();
-						break;
-					default:
-						InnerCell = new GroundCell();
-						break;
+					InnerCell = new StartCell();
+					Start = this;
 				}
 			}
+			else if (x == list.Width - 1)
+			{
+				if (y == (int)(_f * list.Height))
+				{
+					InnerCell = new GoalCell();
+					Goal = this;
+				}
+			}
+			//else if (x <= 3 && y <= 3)
+			//	InnerCell = new GroundCell();
+			//else if (x >= list.Width - 4 && y >= list.Height - 4)
+			//	InnerCell = new GroundCell();
+			//else
+			//{
+			//	switch (Rnd.Next(8))
+			//	{
+			//		case 1:
+			//			InnerCell = new Tower1Cell();
+			//			break;
+			//		case 2:
+			//			InnerCell = new Tower2Cell();
+			//			break;
+			//		case 3:
+			//			InnerCell = new FreezeCell();
+			//			break;
+			//		default:
+			//			InnerCell = new GroundCell();
+			//			break;
+			//	}
+			//}
 		}
 
-		public BoardCell InnerCell
+		public IBoardCell InnerCell
 		{
 			get { return _innerCell; }
 			set { _innerCell = value; }
-		}
-
-		public void SwitchCell()
-		{
-			if (InnerCell is GroundCell)
-				switch (Rnd.Next(1, 4))
-				{
-					case 1:
-						_innerCell = new Tower1Cell();
-						break;
-					case 2:
-						_innerCell = new Tower2Cell();
-						break;
-					case 3:
-						InnerCell = new FreezeCell();
-						break;
-				}
-			else
-				_innerCell = new GroundCell();
 		}
 
 		public int CellCost
@@ -127,166 +129,349 @@ namespace TowerDefense.GUI.Windows.Cells
 		{
 			get { return InnerCell.CanWalk; }
 		}
+
+		//public CircularMenu Menu
+		//{
+		//	get { return InnerCell.Menu; }
+		//}
 	}
 
-	public class FreezeCell : BoardCell
+	public class Menu
 	{
-		public override bool CanWalk
+		private readonly Tower _texture;
+		private readonly Func<Cell, Action> _action;
+		private readonly string _text;
+
+		public Menu(Tower texture, Func<Cell, Action> action, string text)
 		{
-			get { return false; }
+			_texture = texture;
+			_action = action;
+			_text = text;
 		}
 
-		public override Texture Texture
+		public Tower Texture
 		{
-			get { return Texture.Freeze; }
+			get { return _texture; }
 		}
 
-		public override string Name
+		public Func<Cell, Action> Action
 		{
-			get { return "Freezer"; }
+			get { return _action; }
 		}
 
-		public override int CellCost
+		public string Text
 		{
-			get { return 10; }
+			get { return _text; }
 		}
 	}
 
-	public abstract class BoardCell
+
+	public interface IBoardCell
 	{
-		public abstract bool CanWalk
+		bool CanWalk
 		{
 			get;
 		}
 
-		public abstract Texture Texture
+		Tower Texture
 		{
 			get;
 		}
 
-		public abstract string Name
+		string Name
 		{
 			get;
 		}
 
-		public abstract int CellCost
+		int CellCost
 		{
 			get;
 		}
+
+		IEnumerable<Menu> Menu { get; }
 	}
 
-	class Tower1Cell : BoardCell
+
+
+	public class FreezeCell : IBoardCell
 	{
-		public override bool CanWalk
+		private static readonly IEnumerable<Menu> _menu;
+		private static readonly bool _canWalk;
+		private static readonly Tower _texture;
+		private static readonly string _name;
+		private static readonly int _cellCost;
+
+		static FreezeCell()
 		{
-			get { return false; }
+			_texture = Tower.Freeze;
+			_name = "Freezer";
+			_canWalk = true;
+			_cellCost = 10;
+
+			_menu = new Menu[]
+				{
+					new Menu(Tower.Ground, cell => () => cell.InnerCell = new GroundCell(), "Supprimer")
+				};
 		}
 
-		public override Texture Texture
+		public bool CanWalk
 		{
-			get { return Texture.Tower1; }
+			get { return _canWalk; }
 		}
 
-		public override string Name
+		public Tower Texture
 		{
-			get { return "Tower 1"; }
+			get { return _texture; }
 		}
 
-		public override int CellCost
+		public string Name
 		{
-			get { return 0; }
+			get { return _name; }
+		}
+
+		public int CellCost
+		{
+			get { return _cellCost; }
+		}
+
+		public  IEnumerable<Menu> Menu
+		{
+			get { return _menu; }
 		}
 	}
 
-	class Tower2Cell : BoardCell
+	class Tower1Cell : IBoardCell
 	{
-		public override bool CanWalk
+		private static readonly IEnumerable<Menu> _menu;
+		private static readonly bool _canWalk;
+		private static readonly Tower _texture;
+		private static readonly string _name;
+		private static readonly int _cellCost;
+
+		static Tower1Cell()
 		{
-			get { return false; }
+			_texture = Tower.Tower1;
+			_name = "Tour 1";
+			_canWalk = false;
+			_cellCost = 0;
+
+			_menu = new Menu[]
+				{
+					new Menu(Tower.Tower2, cell => () => cell.InnerCell = new Tower2Cell(), "Upgrade"),
+					new Menu(Tower.Ground, cell => () => cell.InnerCell = new GroundCell(), "Supprimer")
+				};
 		}
 
-		public override Texture Texture
+		public bool CanWalk
 		{
-			get { return Texture.Tower2; }
+			get { return _canWalk; }
 		}
 
-		public override string Name
+		public Tower Texture
 		{
-			get { return "Tower 2"; }
+			get { return _texture; }
 		}
 
-		public override int CellCost
+		public string Name
 		{
-			get { return 15; }
+			get { return _name; }
+		}
+
+		public int CellCost
+		{
+			get { return _cellCost; }
+		}
+
+		public  IEnumerable<Menu> Menu
+		{
+			get { return _menu; }
 		}
 	}
 
-	class StartCell : BoardCell
+	class Tower2Cell : IBoardCell
 	{
-		public override bool CanWalk
+		private static readonly IEnumerable<Menu> _menu;
+		private static readonly bool _canWalk;
+		private static readonly Tower _texture;
+		private static readonly string _name;
+		private static readonly int _cellCost;
+
+		static Tower2Cell()
+		{
+			_texture = Tower.Tower2;
+			_name = "Tour 2";
+			_canWalk = false;
+			_cellCost = 0;
+
+			_menu = new Menu[]
+				{
+					new Menu(Tower.Ground, cell => () => cell.InnerCell = new GroundCell(), "Supprimer")
+				};
+		}
+
+		public bool CanWalk
+		{
+			get { return _canWalk; }
+		}
+
+		public Tower Texture
+		{
+			get { return _texture; }
+		}
+
+		public string Name
+		{
+			get { return _name; }
+		}
+
+		public int CellCost
+		{
+			get { return _cellCost; }
+		}
+
+		public  IEnumerable<Menu> Menu
+		{
+			get { return _menu; }
+		}
+	}
+
+	class StartCell : IBoardCell
+	{
+		private static readonly IEnumerable<Menu> _menu;
+		private static readonly bool _canWalk;
+		private static readonly Tower _texture;
+		private static readonly string _name;
+		private static readonly int _cellCost;
+
+		static StartCell()
+		{
+			_texture = Tower.Start;
+			_name = "Départ";
+			_canWalk = true;
+			_cellCost = 0;
+
+			_menu = new Menu[]
+				{
+				};
+		}
+
+		public  bool CanWalk
 		{
 			get { return true; }
 		}
 
-		public override Texture Texture
+		public  Tower Texture
 		{
-			get { return Texture.Start; }
+			get { return Tower.Start; }
 		}
 
-		public override string Name
+		public  string Name
 		{
 			get { return "Start"; }
 		}
 
-		public override int CellCost
+		public  int CellCost
 		{
 			get { return 0; }
+		}
+
+		public  IEnumerable<Menu> Menu
+		{
+			get { return _menu; }
 		}
 	}
 
-	class GoalCell : BoardCell
+	class GoalCell : IBoardCell
 	{
-		public override bool CanWalk
+		private static readonly IEnumerable<Menu> _menu;
+		private static readonly bool _canWalk;
+		private static readonly Tower _texture;
+		private static readonly string _name;
+		private static readonly int _cellCost;
+
+		static GoalCell()
 		{
-			get { return false; }
+			_texture = Tower.Goal;
+			_name = "Arrivée";
+			_canWalk = true;
+			_cellCost = 0;
+
+			_menu = new Menu[]
+				{
+				};
 		}
 
-		public override Texture Texture
+		public bool CanWalk
 		{
-			get { return Texture.Goal; }
+			get { return _canWalk; }
 		}
 
-		public override string Name
+		public Tower Texture
 		{
-			get { return "Goal"; }
+			get { return _texture; }
 		}
 
-		public override int CellCost
+		public string Name
 		{
-			get { return 0; }
+			get { return _name; }
+		}
+
+		public int CellCost
+		{
+			get { return _cellCost; }
+		}
+
+		public IEnumerable<Menu> Menu
+		{
+			get { return _menu; }
 		}
 	}
 
-	class GroundCell : BoardCell
+	class GroundCell : IBoardCell
 	{
-		public override bool CanWalk
+		private static readonly IEnumerable<Menu> _menu;
+		private static readonly bool _canWalk;
+		private static readonly Tower _texture;
+		private static readonly string _name;
+		private static readonly int _cellCost;
+
+		static GroundCell()
 		{
-			get { return true; }
+			_texture = Tower.Ground;
+			_name = "Sol";
+			_canWalk = true;
+			_cellCost = 0;
+
+			_menu = new Menu[]
+				{
+					new Menu(Tower.Tower1, cell => () => cell.InnerCell = new Tower1Cell(), "Tour 1"),
+					new Menu(Tower.Freeze, cell => () => cell.InnerCell = new FreezeCell(), "Freezer")
+				};
 		}
 
-		public override Texture Texture
+		public bool CanWalk
 		{
-			get { return Texture.Ground; }
+			get { return _canWalk; }
 		}
 
-		public override string Name
+		public Tower Texture
 		{
-			get { return "Ground"; }
+			get { return _texture; }
 		}
 
-		public override int CellCost
+		public string Name
 		{
-			get { return 0; }
+			get { return _name; }
+		}
+
+		public int CellCost
+		{
+			get { return _cellCost; }
+		}
+
+		public  IEnumerable<Menu> Menu
+		{
+			get { return _menu; }
 		}
 	}
 }
