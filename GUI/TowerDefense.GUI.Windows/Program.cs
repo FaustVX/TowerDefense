@@ -1,5 +1,6 @@
 ﻿#region Using Statements
 using System;
+using System.Windows.Forms;
 using CSharpHelper;
 
 #endregion
@@ -29,18 +30,22 @@ namespace TowerDefense.GUI.Windows
 
 			if (args.Length == 0)
 			{
-				new StartPage((seed, size, fullscreen, mode) =>
-					{
-						random = new Random(seed);
 
-						using (var game = new Game1(size, fullscreen, mode))
+				Application.EnableVisualStyles();
+				Application.SetCompatibleTextRenderingDefault(false);
+				Application.Run(new StartPage((nom, size, fullscreen, mode) =>
+					{
+						random = new Random();
+
+						using (var game = new Game1(nom, size, fullscreen, mode))
 							game.Run();
-					});
+					}));
 			}
 			else
 			{
 
 				int seed = Environment.TickCount;
+				string name = "";
 				ArroundSelectMode mode = ArroundSelectMode.Round;
 				int size = 20;
 				bool fullscreen = true;
@@ -65,10 +70,14 @@ namespace TowerDefense.GUI.Windows
 					if (bool.TryParse(args[3], out fullscreen))
 						fullscreen = true;
 				}
+				if (args.Length >= 5)
+				{
+					name = args[4];
+				}
 
 				random = new Random(seed);
 
-				using (var game = new Game1(size, fullscreen, mode))
+				using (var game = new Game1(name, size, fullscreen, mode))
 					game.Run();
 			}
 		}

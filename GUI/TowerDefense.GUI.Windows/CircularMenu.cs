@@ -114,7 +114,7 @@ namespace TowerDefense.GUI.Windows
 		public void LoadContent(ContentManager content)
 		{
 			_circleTexture = content.Load<Texture2D>(@"Shape\Circle");
-			_lineTexture = content.Load<Texture2D>(@"Shape\Line");
+			_lineTexture = content.Load<Texture2D>(@"Shape\Pixel");
 			_font = content.Load<SpriteFont>("Font");
 		}
 
@@ -165,12 +165,22 @@ namespace TowerDefense.GUI.Windows
 							new Rectangle(OpenningPoint.X - _itemSize / 2, OpenningPoint.Y - _itemSize / 2, _itemSize, _itemSize),
 							Color.White);
 
-			spritebatch.DrawString(_font, _elements[_selectedItem].Text,
-									new Vector2((OpenningPoint.X - _itemSize / 2) + 2, (OpenningPoint.Y + _itemSize / 2) + 2),
-									Color.Gray);
-			spritebatch.DrawString(_font, _elements[_selectedItem].Text,
-									new Vector2(OpenningPoint.X - _itemSize / 2, OpenningPoint.Y + _itemSize / 2),
-									Color.White);
+			for (int i = 0, x = 0; i < _elements[_selectedItem].Text.Length; i++, x+=30 )
+			{
+				spritebatch.DrawString(_font, _elements[_selectedItem].Text[i],
+										new Vector2(OpenningPoint.X - _itemSize / 2 + 2, OpenningPoint.Y + _itemSize / 2 + x + 2),
+										Color.Gray);
+				spritebatch.DrawString(_font, _elements[_selectedItem].Text[i],
+										new Vector2(OpenningPoint.X - _itemSize / 2, OpenningPoint.Y + _itemSize / 2 + x),
+										Color.LightGray);
+			}
+
+			//spritebatch.DrawString(_font, _elements[_selectedItem].Money,
+			//						new Vector2(OpenningPoint.X - _itemSize / 2 + 2, OpenningPoint.Y + _itemSize / 2 + 32),
+			//						Color.Gray);
+			//spritebatch.DrawString(_font, _elements[_selectedItem].Money,
+			//						new Vector2(OpenningPoint.X - _itemSize / 2, OpenningPoint.Y + _itemSize / 2 + 30),
+			//						Color.LightGray);
 		}
 
 		public void Open(Point openningPoint)
@@ -190,5 +200,41 @@ namespace TowerDefense.GUI.Windows
 		}
 		#endregion
 
+	}
+
+	public class MenuElement
+	{
+		private readonly Texture2D _texture;
+		private readonly List<MenuElement> _children;
+		private readonly Action _action;
+		private readonly string[] _text;
+
+		public MenuElement(Texture2D texture, Action action, params string[] text)
+		{
+			_texture = texture;
+			_action = action;
+			_text = text;
+			_children = new List<MenuElement>();
+		}
+
+		public Texture2D Texture
+		{
+			get { return _texture; }
+		}
+
+		public List<MenuElement> Children
+		{
+			get { return _children; }
+		}
+
+		public Action Action
+		{
+			get { return _action; }
+		}
+
+		public string[] Text
+		{
+			get { return _text; }
+		}
 	}
 }

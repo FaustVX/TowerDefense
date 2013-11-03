@@ -25,16 +25,20 @@ namespace TowerDefense.GUI.Windows
 		private readonly Dictionary<Tower, Texture2D> _towerTextures;
 		private readonly Dictionary<Textures.Ship, Texture2D> _shipTextures;
 		private readonly Grid _board;
-		private readonly int _offsetX, _offsetY, _sizeX, _sizeY, _width, _height;
+		private int _offsetX, _offsetY, _sizeX, _sizeY;
+		private readonly int _width, _height;
 		private Cell _selectedCell;
+
 		private readonly CircularMenu _menu;
+		private readonly StatusBar _statusBar;
+		private readonly InformationPanel _infoPanel;
 
 		private MouseState _mouseState, _oldMouseState;
 		private KeyboardState _keyboardState, _oldKeyboardState;
 
 		private delegate Rectangle CreateRectangle(int x, int y);
 
-		private readonly CreateRectangle _rect;
+		private CreateRectangle _rect;
 
 		private Random _rnd;
 		private IEnumerable<Grid<Cell>.DirectionalCell> _path;
@@ -45,17 +49,23 @@ namespace TowerDefense.GUI.Windows
 
 		private bool _running;
 		private SpriteFont _font;
+		private Texture2D _pixel;
+		private Texture2D _informationTexture;
+		private readonly Player _player;
 
-		public Game1(int size, bool fullscreen, ArroundSelectMode mode)
+		public Game1(string name, int size, bool fullscreen, ArroundSelectMode mode)
 		{
 			_graphics = new GraphicsDeviceManager(this) {IsFullScreen = fullscreen};
 			Content.RootDirectory = "Content";
 
 			_towerTextures = new Dictionary<Tower, Texture2D>();
 			_shipTextures = new Dictionary<Textures.Ship, Texture2D>();
-			_menu = new CircularMenu(100);
+			_menu = new CircularMenu(size * 2);
 
 			_rnd = Program.Random;
+
+			_sizeX = _sizeY = size;
+			_board = new Grid(30, 20, _sizeX, _sizeY);
 			if (fullscreen)
 			{
 				_width = _graphics.GraphicsDevice.DisplayMode.Width;
@@ -66,12 +76,13 @@ namespace TowerDefense.GUI.Windows
 				_width = _graphics.PreferredBackBufferWidth;
 				_height = _graphics.PreferredBackBufferHeight;
 			}
-
-			_sizeX = _sizeY = size;
-			_board = new Grid(_width / _sizeX, _height / _sizeY);
 			_offsetX = (_width - _board.Width * _sizeX) / 2;
 			_offsetY = (_height - _board.Height * _sizeY) / 2;
+
 			_rect = RectangleFactory(_offsetX, _offsetY, _sizeX, _sizeY);
+			_player = new Player(name, 100);
+			_statusBar = new StatusBar(30, _width, _player);
+			_infoPanel = new InformationPanel(_width, _statusBar.Height);
 			_running = true;
 			_changePath = _delegateChangePath = (path, cell) =>
 				{
@@ -139,25 +150,30 @@ namespace TowerDefense.GUI.Windows
 			_spriteBatch = new SpriteBatch(GraphicsDevice);
 
 			_towerTextures.Add(Tower.Ground, Content.Load<Texture2D>("Case"));
+			_towerTextures.Add(Tower.RangeGround, Content.Load<Texture2D>("Range"));
 			_towerTextures.Add(Tower.Tower1, Content.Load<Texture2D>(@"Tower\Tower1"));
 			_towerTextures.Add(Tower.Tower2, Content.Load<Texture2D>(@"Tower\Tower2"));
-			_towerTextures.Add(Tower.Freeze, Content.Load<Texture2D>("Freeze"));
+			_towerTextures.Add(Tower.Freeze, Content.Load<Texture2D>(@"Tower\Freeze"));
 			_towerTextures.Add(Tower.Start, Content.Load<Texture2D>("Start"));
-			_towerTextures.Add(Tower.Goal, Content.Load<Texture2D>("Goal"));
+			_towerTextures.Add(Tower.Base, Content.Load<Texture2D>("Base"));
 			_towerTextures.Add(Tower.Direction, Content.Load<Texture2D>("Arrow"));
 
 			_shipTextures.Add(Textures.Ship.Ship1, Content.Load<Texture2D>(@"Ship\Ship1"));
 			_shipTextures.Add(Textures.Ship.Ship2, Content.Load<Texture2D>(@"Ship\Ship2"));
 
 			_font = Content.Load<SpriteFont>("Font");
+			_pixel = Content.Load<Texture2D>(@"Shape\Pixel");
+			_informationTexture = Content.Load<Texture2D>("Information");
 
 			_menu.LoadContent(Content);
+			_statusBar.LoadContent(Content);
+			_infoPanel.LoadContent(Content);
 
 			new Thread(() =>
-			{
-				while (_running)
-					_path = _changePath(_path, Cell.Start);
-			}).Start();
+				{
+					while (_running)
+						_path = _changePath(_path, Cell.Start);
+				}).Start();
 		}
 
 		/// <summary>
@@ -178,19 +194,71 @@ namespace TowerDefense.GUI.Windows
 				_running = false;
 				Exit();
 			}
+
 			if (!CircularMenu.Opened)
-				_selectedCell = _board[(_mouseState.X - _offsetX) / _sizeX, (_mouseState.Y - _offsetY) / _sizeY];
+			{
+				if (_mouseState.RightButton == ButtonState.Pressed || _mouseState.MiddleButton == ButtonState.Pressed)
+				{
+					_offsetX += _mouseState.X - _oldMouseState.X;
+					_offsetY += _mouseState.Y - _oldMouseState.Y;
+					_rect = RectangleFactory(_offsetX, _offsetY, _sizeX, _sizeY);
+				}
+				if (_mouseState.ScrollWheelValue - _oldMouseState.ScrollWheelValue != 0)
+				{
+					var dir = ((_mouseState.ScrollWheelValue - _oldMouseState.ScrollWheelValue) > 0) ? 1 : -1;
+
+					//_offsetX += dir * (_offsetX - _board.Width);
+					//_offsetY += dir;
+
+					_sizeX += dir;
+					_sizeY += dir;
+					if (_sizeX < 1)
+						_sizeX = 1;
+					if (_sizeY < 1)
+						_sizeY = 1;
+
+					_rect = RectangleFactory(_offsetX, _offsetY, _sizeX, _sizeY);
+				}
+
+				if (_mouseState.X - _offsetX < 0 || _mouseState.Y - _offsetY < 0)
+					_selectedCell = null;
+				else
+					_selectedCell = _board[(_mouseState.X - _offsetX) / _sizeX, (_mouseState.Y - _offsetY) / _sizeY];
+			}
 
 			if (_selectedCell != null)
-				if (!CircularMenu.Opened)
+				if (_infoPanel.Opened)
+				{
+					if (_mouseState.LeftButton == ButtonState.Pressed && _oldMouseState.LeftButton == ButtonState.Released)
+						_infoPanel.Close();
+				}
+				else if (!CircularMenu.Opened)
 				{
 					if (_mouseState.LeftButton == ButtonState.Pressed && _oldMouseState.LeftButton == ButtonState.Released)
 					{
 						_menu.Clear();
-						_menu.Add(new MenuElement(_towerTextures[Tower.Direction], () => { }, "Retour"));
-						_menu.AddRange(
-							_selectedCell.InnerCell.Menu.Select(
-								menu => new MenuElement(_towerTextures[menu.Texture], menu.Action(_selectedCell), menu.Text)));
+						_menu.Add(new MenuElement(_towerTextures[Tower.Direction], () => { }, "Retour", ""));
+						_menu.AddRange(_selectedCell.InnerCell.Menu.Select(
+							menu => new MenuElement(_towerTextures[menu.Texture], () =>
+								{
+									if (menu.Money < 0)
+									{
+										if (!_player.CanWithDraw(-menu.Money))
+											return;
+										_player.WithDraw(-menu.Money);
+									}
+									else
+										_player.Put(menu.Money);
+									//_player.Life += _rnd.Next(-20, 20);
+									menu.Action(_selectedCell, _player)();
+								}, menu.Text, menu.Money + _player.Currency)));
+						if (_selectedCell.InnerCell is TowerCell)
+						{
+							var cell = _selectedCell.InnerCell as TowerCell;
+							_menu.Add(new MenuElement(_informationTexture,
+													() => _infoPanel.View(new InformationElement(_towerTextures[cell.Texture], cell.Name))
+													, "Information", ""));
+						}
 
 						var open = new Point(_mouseState.X, _mouseState.Y);
 						if (open.X < _menu.Size / 2)
@@ -216,6 +284,7 @@ namespace TowerDefense.GUI.Windows
 						_changePath = _delegateChangePath;
 					}
 				}
+			_statusBar.Update();
 
 			base.Update(gameTime);
 		}
@@ -229,10 +298,6 @@ namespace TowerDefense.GUI.Windows
 			var path = RectangleFactory(_sizeX / 2 + _offsetX, _sizeY / 2 + _offsetY, _sizeX, _sizeY);
 			GraphicsDevice.Clear(Color.CornflowerBlue);
 			_spriteBatch.Begin((SpriteSortMode)0, null, SamplerState.PointWrap, null, null);
-
-			//_spriteBatch.Draw(_textures[Texture.Ground],
-			//				new Rectangle(600, 0, 200, 480),
-			//				Color.White);
 
 			for (int x = 0; x < _board.Width; ++x)
 				for (int y = 0; y < _board.Height; ++y)
@@ -248,6 +313,9 @@ namespace TowerDefense.GUI.Windows
 				foreach (var c in _path.Where(cell => !Equals(cell, default(Grid<Cell>.DirectionalCell))))
 					DrawPath(c, path);
 
+			_statusBar.Draw(_spriteBatch);
+			_infoPanel.Draw(_spriteBatch);
+
 			_menu.Draw(_spriteBatch);
 
 			_spriteBatch.End();
@@ -261,29 +329,35 @@ namespace TowerDefense.GUI.Windows
 			return (float)((int)dir * (Math.PI / 180));
 		}
 
-		private void DrawPath(Grid<Cell>.DirectionalCell c,  CreateRectangle path)
+		private void DrawPath(Grid<Cell>.DirectionalCell c, CreateRectangle path)
 		{
 			if (c.Direction == Direction.Stay)
 				return;
 			Cell cell = c.Cell;
 
-			//if (_selectedCell != null)
+#if DEBUG
 			if (_selectedCell == cell)
 			{
 				Console.WriteLine("X: {0}, Y: {1}, Dir: {2}", cell.X, cell.Y, c.Direction);
 			}
+#endif
+
 
 			float rotation = DirectionToRad(c.Direction);
 			Texture2D texture = _towerTextures[c.Direction == Direction.Stay ? Tower.Ground : Tower.Direction];
-			//_spriteBatch.Draw(_textures[texture], new Vector2( _rect(cell.X, cell.Y).X, _rect(cell.X, cell.Y).Y), null, Color.White, rotation, new Vector2(_textures[texture].Width, _textures[texture].Height), 1f, SpriteEffects.None, 0);
 			_spriteBatch.Draw(texture,
 							path(cell.X, cell.Y),
-							null, //texture.Bounds,
+							null,
 							(_selectedCell == cell) ? Color.YellowGreen : Color.White,
 							rotation,
 							new Vector2(texture.Width / 2,
 										texture.Height / 2)
 							, SpriteEffects.None, 0f);
+#if DEBUG
+			//var pos = _rect(cell.X, cell.Y);
+			//_spriteBatch.DrawString(_font, c.Value.ToString(), new Vector2(pos.X, pos.Y), Color.Red);
+#endif
+
 		}
 	}
 }

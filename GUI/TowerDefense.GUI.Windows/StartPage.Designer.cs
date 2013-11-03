@@ -110,7 +110,7 @@
 			label1.Name = "label1";
 			label1.Size = new System.Drawing.Size(147, 26);
 			label1.TabIndex = 0;
-			label1.Text = "Seed";
+			label1.Text = "Nom";
 			label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			// 
 			// label2
@@ -131,7 +131,6 @@
 			this.textBox1.Name = "textBox1";
 			this.textBox1.Size = new System.Drawing.Size(208, 20);
 			this.textBox1.TabIndex = 2;
-			this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
 			// 
 			// comboBox1
 			// 
@@ -139,9 +138,9 @@
 			this.comboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 			this.comboBox1.FormattingEnabled = true;
 			this.comboBox1.Items.AddRange(new object[] {
-            "Round",
-            "Cross",
-            "Diagonal"});
+			"Round",
+			"Cross",
+			"Diagonal"});
 			this.comboBox1.Location = new System.Drawing.Point(156, 29);
 			this.comboBox1.Name = "comboBox1";
 			this.comboBox1.Size = new System.Drawing.Size(208, 21);
@@ -218,7 +217,6 @@
 			// button4
 			// 
 			this.button4.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button4.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
 			this.button4.Location = new System.Drawing.Point(107, 3);
 			this.button4.Name = "button4";
 			this.button4.Size = new System.Drawing.Size(98, 30);
@@ -230,7 +228,6 @@
 			// button3
 			// 
 			this.button3.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
 			this.button3.Location = new System.Drawing.Point(3, 3);
 			this.button3.Name = "button3";
 			this.button3.Size = new System.Drawing.Size(98, 30);
