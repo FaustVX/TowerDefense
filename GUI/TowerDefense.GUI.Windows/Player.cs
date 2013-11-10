@@ -8,12 +8,12 @@
 		private int _money;
 		private readonly string _currency;
 
-		public Player(string name, int maxLife)
+		public Player(string name, int maxLife, int money)
 		{
 			_name = name;
 			_maxLife = maxLife;
+			_money = money;
 			_life = _maxLife;
-			_money = 100;
 			_currency = "$";
 		}
 

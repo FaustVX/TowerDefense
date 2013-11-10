@@ -26,60 +26,21 @@ namespace TowerDefense.GUI.Windows
 		[STAThread]
 		private static void Main(string[] args)
 		{
-			//args = new string[] {"741", "diagonal"};
+			random = new Random();
 
 			if (args.Length == 0)
 			{
-
 				Application.EnableVisualStyles();
 				Application.SetCompatibleTextRenderingDefault(false);
-				Application.Run(new StartPage((nom, size, fullscreen, mode) =>
+				Application.Run(new StartPage((nom, money, size, fullscreen, mode) =>
 					{
-						random = new Random();
-
-						using (var game = new Game1(nom, size, fullscreen, mode))
+						using (var game = new Game1(nom, money, size, fullscreen))
 							game.Run();
 					}));
 			}
 			else
-			{
-
-				int seed = Environment.TickCount;
-				string name = "";
-				ArroundSelectMode mode = ArroundSelectMode.Round;
-				int size = 20;
-				bool fullscreen = true;
-
-				if (args.Length >= 1)
-				{
-					if (!int.TryParse(args[0], out seed))
-						seed = args[0].GetHashCode();
-				}
-				if (args.Length >= 2)
-				{
-					if (!int.TryParse(args[1], out size))
-						seed = 20;
-				}
-				if (args.Length >= 3)
-				{
-					if (!Enum.TryParse(args[2], true, out mode))
-						mode = ArroundSelectMode.Round;
-				}
-				if (args.Length >= 4)
-				{
-					if (bool.TryParse(args[3], out fullscreen))
-						fullscreen = true;
-				}
-				if (args.Length >= 5)
-				{
-					name = args[4];
-				}
-
-				random = new Random(seed);
-
-				using (var game = new Game1(name, size, fullscreen, mode))
+				using (var game = new Game1("FaustVX", 100, 20, false))
 					game.Run();
-			}
 		}
 	}
 #endif

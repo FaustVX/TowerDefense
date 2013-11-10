@@ -135,6 +135,11 @@ namespace TowerDefense.GUI.Windows
 			return old == ButtonState.Pressed && curent == ButtonState.Released;
 		}
 
+		public static bool KeyboardClick(Keys key)
+		{
+			return oldKeyboardState.IsKeyDown(key) && keyboardState.IsKeyUp(key);
+		}
+
 		public static bool HasScrolled()
 		{
 			return oldMouseState.ScrollWheelValue != mouseState.ScrollWheelValue;

@@ -16,13 +16,14 @@ namespace TowerDefense.GUI.Windows
 	{
 		private readonly Dictionary<Tower, Texture2D> _towerTextures;
 		private int _offsetX, _offsetY, _sizeX, _sizeY;
-		private readonly int _width, _height;
 		private Cell _selectedCell;
 		private IEnumerable<DirectionalCell> _path;
 		private Func<IEnumerable<DirectionalCell>, Cell, IEnumerable<DirectionalCell>> _changePath;
 		private readonly Func<IEnumerable<DirectionalCell>, Cell, IEnumerable<DirectionalCell>> _delegateChangePath;
 		private bool _running;
 		private CreateRectangle _rect;
+		private ShipGroup _ships;
+		private int _zoom;
 
 		private delegate Rectangle CreateRectangle(int x, int y);
 
@@ -40,6 +41,7 @@ namespace TowerDefense.GUI.Windows
 		{
 			_sizeX = sizeX;
 			_sizeY = sizeY;
+			Zoom = 10;
 
 			_towerTextures = new Dictionary<Tower, Texture2D>();
 			_offsetX = (screenWidth - Width * _sizeX) / 2;
@@ -84,12 +86,12 @@ namespace TowerDefense.GUI.Windows
 
 		public int SizeX
 		{
-			get { return _sizeX; }
+			get { return (int)(_sizeX * Zoom); }
 		}
 
 		public int SizeY
 		{
-			get { return _sizeY; }
+			get { return (int)(_sizeY * Zoom); }
 		}
 
 		public bool Running
@@ -115,13 +117,19 @@ namespace TowerDefense.GUI.Windows
 			get { return _selectedCell; }
 		}
 
+		public float Zoom
+		{
+			get { return _zoom * 0.1f; }
+			private set { _zoom = (int)value; }
+		}
+
 		public void LoadContent(ContentManager content)
 		{
 			_towerTextures.Add(Tower.Ground, content.Load<Texture2D>("Case"));
 			_towerTextures.Add(Tower.RangeGround, content.Load<Texture2D>("Range"));
-			_towerTextures.Add(Tower.Tower1, content.Load<Texture2D>(@"Tower\Tower1"));
-			_towerTextures.Add(Tower.Tower2, content.Load<Texture2D>(@"Tower\Tower2"));
-			_towerTextures.Add(Tower.Freeze, content.Load<Texture2D>(@"Tower\Freeze"));
+			_towerTextures.Add(Tower.Tower1, content.Load<Texture2D>(@"Tower/Tower1"));
+			_towerTextures.Add(Tower.Tower2, content.Load<Texture2D>(@"Tower/Tower2"));
+			_towerTextures.Add(Tower.Freeze, content.Load<Texture2D>(@"Tower/Freeze"));
 			_towerTextures.Add(Tower.Start, content.Load<Texture2D>("Start"));
 			_towerTextures.Add(Tower.Base, content.Load<Texture2D>("Base"));
 			_towerTextures.Add(Tower.Direction, content.Load<Texture2D>("Arrow"));
@@ -140,6 +148,10 @@ namespace TowerDefense.GUI.Windows
 
 		public void Update()
 		{
+			if (InputEvent.KeyboardClick(Keys.Space))
+			{
+				LaunchWave(Textures.Ship.Ship2);
+			}
 			if (!CircularMenu.Opened)
 			{
 				if (InputEvent.MouseState.RightButton == ButtonState.Pressed ||
@@ -148,35 +160,31 @@ namespace TowerDefense.GUI.Windows
 					var move = InputEvent.MouseMove();
 					_offsetX -= (int)move.X;
 					_offsetY -= (int)move.Y;
-					_rect = RectangleFactory(_offsetX, _offsetY, _sizeX, _sizeY);
+					_rect = RectangleFactory(_offsetX, _offsetY, SizeX, SizeY);
 				}
 				if (InputEvent.HasScrolled())
 				{
 					var dir = (InputEvent.ScroolValue() > 0) ? 1 : -1;
+					_zoom += dir;
+					if (_zoom < 1)
+						_zoom = 1;
 
-					//_offsetX += dir * (_offsetX - _board.Width);
-					//_offsetY += dir;
-
-					_sizeX += dir;
-					_sizeY += dir;
-					if (_sizeX < 1)
-						_sizeX = 1;
-					if (_sizeY < 1)
-						_sizeY = 1;
-
-					_rect = RectangleFactory(_offsetX, _offsetY, _sizeX, _sizeY);
+					_rect = RectangleFactory(_offsetX, _offsetY, SizeX, SizeY);
 				}
+
 				if (InputEvent.MousePosition().X - _offsetX < 0 || InputEvent.MousePosition().Y - _offsetY < 0)
 					_selectedCell = null;
 				else
 					_selectedCell =
-						this[(InputEvent.MousePosition().X - _offsetX) / _sizeX, (InputEvent.MousePosition().Y - _offsetY) / _sizeY];
+						this[(InputEvent.MousePosition().X - _offsetX) / SizeX, (InputEvent.MousePosition().Y - _offsetY) / SizeY];
 			}
+			if (_ships != null)
+				_ships.Update();
 		}
 
 		public void Draw(SpriteBatch spritebatch)
 		{
-			var path = RectangleFactory(_sizeX / 2 + _offsetX, _sizeY / 2 + _offsetY, _sizeX, _sizeY);
+			var path = RectangleFactory(SizeX / 2 + _offsetX, SizeY / 2 + _offsetY, SizeX, SizeY);
 			for (int x = 0; x < Width; ++x)
 				for (int y = 0; y < Height; ++y)
 				{
@@ -193,13 +201,9 @@ namespace TowerDefense.GUI.Windows
 			if (_path != null)
 				foreach (var c in _path.Where(cell => !Equals(cell, default(DirectionalCell))))
 					DrawPath(c, path, spritebatch);
-		}
 
-		private static float DirectionToRad(Direction dir)
-		{
-			if (dir == Direction.Stay)
-				return 0f;
-			return (float)((int)dir * (Math.PI / 180));
+			if (_ships != null)
+				_ships.Draw(spritebatch, SizeX, new Point(_offsetX, _offsetY));
 		}
 
 		private void DrawPath(DirectionalCell c, CreateRectangle path, SpriteBatch spritebatch)
@@ -216,7 +220,7 @@ namespace TowerDefense.GUI.Windows
 #endif
 
 
-			float rotation = DirectionToRad(c.Direction);
+			float rotation = c.ToRad();
 			Texture2D texture = _towerTextures[c.Direction == Direction.Stay ? Tower.Ground : Tower.Direction];
 			spritebatch.Draw(texture,
 							path(cell.X, cell.Y),
@@ -226,16 +230,17 @@ namespace TowerDefense.GUI.Windows
 							new Vector2(texture.Width / 2,
 										texture.Height / 2)
 							, SpriteEffects.None, 0f);
-#if DEBUG
-			//var pos = _rect(cell.X, cell.Y);
-			//_spriteBatch.DrawString(_font, c.Value.ToString(), new Vector2(pos.X, pos.Y), Color.Red);
-#endif
 
 		}
 
 		public void RecalculatePath()
 		{
 			_changePath = _delegateChangePath;
+		}
+
+		public void LaunchWave(Textures.Ship ship)
+		{
+			_ships = new ShipGroup(ship, _path.ToList(), 10, 10, new Point(Cell.Start.X, Cell.Start.Y));
 		}
 	}
 }

@@ -7,12 +7,12 @@ namespace TowerDefense.GUI.Windows
 {
 	public partial class StartPage : Form
 	{
-		private readonly Action<string, int, bool, ArroundSelectMode> _start;
+		private readonly Action<string, int, int, bool, ArroundSelectMode> _start;
 		private ArroundSelectMode _mode;
 		private bool _fullscreen;
 		private readonly string _text;
 
-		public StartPage(Action<string, int, bool, ArroundSelectMode> start)
+		public StartPage(Action<string, int, int, bool, ArroundSelectMode> start)
 		{
 			_start = start;
 			_mode = ArroundSelectMode.Round;
@@ -25,7 +25,6 @@ namespace TowerDefense.GUI.Windows
 			button4.Enabled = _fullscreen;
 
 			AcceptButton = button1;
-			comboBox1.SelectedIndex = 0;
 			var rnd = new Random();
 			var length = rnd.Next(5, 20);
 			char[] text = new char[length];
@@ -38,7 +37,7 @@ namespace TowerDefense.GUI.Windows
 
 		private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			if(!Enum.TryParse(comboBox1.Text, out _mode))
+			if(!Enum.TryParse(numericUpDown1.Text, out _mode))
 			{
 				_mode= ArroundSelectMode.Round;
 			}
@@ -48,9 +47,10 @@ namespace TowerDefense.GUI.Windows
 		{
 			int size = trackBar1.Value;
 			string name = textBox1.Text;
+			int money = (int)numericUpDown1.Value;
 			Close();
 
-			new Thread(() => _start(name, size, _fullscreen, _mode)).Start();
+			new Thread(() => _start(name, money, size, _fullscreen, _mode)).Start();
 		}
 
 		private void trackBar1_Scroll(object sender, EventArgs e)

@@ -45,9 +45,10 @@ namespace TowerDefense.GUI.Windows
 			_opened = false;
 		}
 
-		public void LoadContent(ContentManager content)
+		public void LoadContent(ContentManager content, GraphicsDevice device)
 		{
-			_pixel = content.Load<Texture2D>(@"Shape\Pixel");
+			_pixel = new Texture2D(device, 1, 1);
+			_pixel.SetData(new Color[] {Color.White});
 			_font = content.Load<SpriteFont>(@"Font");
 		}
 

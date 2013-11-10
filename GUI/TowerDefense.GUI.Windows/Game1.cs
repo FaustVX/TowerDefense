@@ -3,8 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using CSharpHelper;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -23,7 +21,6 @@ namespace TowerDefense.GUI.Windows
 		private readonly GraphicsDeviceManager _graphics;
 		private SpriteBatch _spriteBatch;
 		private readonly Dictionary<Tower, Texture2D> _towerTextures;
-		private readonly Dictionary<Textures.Ship, Texture2D> _shipTextures;
 		private readonly Grid _board;
 		private readonly int _width, _height;
 
@@ -33,17 +30,15 @@ namespace TowerDefense.GUI.Windows
 
 		private Random _rnd;
 		private SpriteFont _font;
-		private Texture2D _pixel;
 		private Texture2D _informationTexture;
 		private readonly Player _player;
 
-		public Game1(string name, int size, bool fullscreen, ArroundSelectMode mode)
+		public Game1(string name, int money, int size, bool fullscreen)
 		{
 			_graphics = new GraphicsDeviceManager(this) {IsFullScreen = fullscreen};
 			Content.RootDirectory = "Content";
 
 			_towerTextures = new Dictionary<Tower, Texture2D>();
-			_shipTextures = new Dictionary<Textures.Ship, Texture2D>();
 			_menu = new CircularMenu(size * 2);
 
 			_rnd = Program.Random;
@@ -60,7 +55,7 @@ namespace TowerDefense.GUI.Windows
 			}
 			_board = new Grid(30, 20, size, size, _width, _height);
 
-			_player = new Player(name, 100);
+			_player = new Player(name, 100, money);
 			_statusBar = new StatusBar(30, _width, _player);
 			_infoPanel = new InformationPanel(_width, _statusBar.Height);
 			Exiting += (o, e) => _board.Running = false;
@@ -79,23 +74,20 @@ namespace TowerDefense.GUI.Windows
 
 			_towerTextures.Add(Tower.Ground, Content.Load<Texture2D>("Case"));
 			_towerTextures.Add(Tower.RangeGround, Content.Load<Texture2D>("Range"));
-			_towerTextures.Add(Tower.Tower1, Content.Load<Texture2D>(@"Tower\Tower1"));
-			_towerTextures.Add(Tower.Tower2, Content.Load<Texture2D>(@"Tower\Tower2"));
-			_towerTextures.Add(Tower.Freeze, Content.Load<Texture2D>(@"Tower\Freeze"));
+			_towerTextures.Add(Tower.Tower1, Content.Load<Texture2D>(@"Tower/Tower1"));
+			_towerTextures.Add(Tower.Tower2, Content.Load<Texture2D>(@"Tower/Tower2"));
+			_towerTextures.Add(Tower.Freeze, Content.Load<Texture2D>(@"Tower/Freeze"));
 			_towerTextures.Add(Tower.Start, Content.Load<Texture2D>("Start"));
 			_towerTextures.Add(Tower.Base, Content.Load<Texture2D>("Base"));
 			_towerTextures.Add(Tower.Direction, Content.Load<Texture2D>("Arrow"));
 
-			_shipTextures.Add(Textures.Ship.Ship1, Content.Load<Texture2D>(@"Ship\Ship1"));
-			_shipTextures.Add(Textures.Ship.Ship2, Content.Load<Texture2D>(@"Ship\Ship2"));
-
 			_font = Content.Load<SpriteFont>("Font");
-			_pixel = Content.Load<Texture2D>(@"Shape\Pixel");
 			_informationTexture = Content.Load<Texture2D>("Information");
+			ShipGroup.LoadContent(Content);
 
-			_menu.LoadContent(Content);
-			_statusBar.LoadContent(Content);
-			_infoPanel.LoadContent(Content);
+			_menu.LoadContent(Content, _graphics.GraphicsDevice);
+			_statusBar.LoadContent(Content, _graphics.GraphicsDevice);
+			_infoPanel.LoadContent(Content, _graphics.GraphicsDevice);
 		}
 
 		/// <summary>
@@ -139,7 +131,6 @@ namespace TowerDefense.GUI.Windows
 									}
 									else
 										_player.Put(menu.Money);
-									//_player.Life += _rnd.Next(-20, 20);
 									menu.Action(_board.SelectedCell, _player)();
 								}, menu.Text, menu.Money + _player.Currency)));
 						if (_board.SelectedCell.InnerCell is TowerCell)

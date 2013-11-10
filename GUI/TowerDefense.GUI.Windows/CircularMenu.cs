@@ -111,10 +111,11 @@ namespace TowerDefense.GUI.Windows
 			_elements.Clear();
 		}
 
-		public void LoadContent(ContentManager content)
+		public void LoadContent(ContentManager content, GraphicsDevice device)
 		{
-			_circleTexture = content.Load<Texture2D>(@"Shape\Circle");
-			_lineTexture = content.Load<Texture2D>(@"Shape\Pixel");
+			_circleTexture = content.Load<Texture2D>(@"Shape/Circle");
+			_lineTexture = new Texture2D(device, 1, 1);
+			_lineTexture.SetData(new Color[] {Color.White});
 			_font = content.Load<SpriteFont>("Font");
 		}
 
