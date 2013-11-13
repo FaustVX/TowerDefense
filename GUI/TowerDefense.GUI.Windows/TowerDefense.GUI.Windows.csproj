@@ -55,6 +55,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Cells\Cell.cs" />
+    <Compile Include="Cursor.cs" />
     <Compile Include="InformationPanel.cs" />
     <Compile Include="CircularMenu.cs" />
     <Compile Include="Game1.cs" />
@@ -87,6 +88,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\Case.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\cursor.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\Information.png">
@@ -158,6 +162,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Content\Font.spritefont" />
+    <None Include="Content\SimpleFont.spritefont" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

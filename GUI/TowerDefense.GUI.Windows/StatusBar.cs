@@ -12,10 +12,11 @@ namespace TowerDefense.GUI.Windows
 		private Texture2D _pixel;
 		private SpriteFont _font;
 		private readonly Rectangle _rectangle;
-		private int _sizeName;
+		private int _startName, _startLifeBar, _startLife, _startMoney, _startSpeed;
 		private readonly int _lifeBarSize;
 		private int _money;
-		private float _life;
+		private int _life;
+		private readonly int _space;
 
 		public StatusBar(int height, int width, Player player)
 		{
@@ -23,6 +24,7 @@ namespace TowerDefense.GUI.Windows
 			_width = width;
 			_player = player;
 			_lifeBarSize = 150;
+			_space = 10;
 			_money = 0;
 			_life = 0;
 			_rectangle = new Rectangle(0, 0, _width, _height);
@@ -43,7 +45,12 @@ namespace TowerDefense.GUI.Windows
 			_pixel = new Texture2D(device, 1, 1);
 			_pixel.SetData(new Color[] {Color.White});
 			_font = content.Load<SpriteFont>("Font");
-			_sizeName = (int)_font.MeasureString(_player.Name).X;
+
+			_startName = 5;
+			_startLifeBar = _startName + (int)_font.MeasureString(_player.Name).X + _space;
+			_startLife = _startLifeBar + _lifeBarSize;
+			_startMoney = _startLife + _space + (int)_font.MeasureString(_player.Life.ToString()).X + _space;
+			_startSpeed = _startMoney + (int)_font.MeasureString((_player.Money * 10).ToString()).X + _space;
 		}
 
 		public void Update()
@@ -53,26 +60,34 @@ namespace TowerDefense.GUI.Windows
 					_money++;
 				else
 					_money--;
-			if (Math.Abs(_life - _player.Life) > 0.1f)
+			if (_life != _player.Life)
 				if (_life < _player.Life)
-					_life+=0.5f;
+					_life += 1;
 				else
-					_life-=0.5f;
+					_life -= 1;
+
+			_startLife = _startLifeBar + (int)((float)_life / _player.MaxLife * _lifeBarSize);
 		}
 
 		public void Draw(SpriteBatch spritebatch)
 		{
+			//BackGround
 			spritebatch.Draw(_pixel, _rectangle, Color.Black);
-			spritebatch.DrawString(_font, _player.Name, Vector2.Zero, Color.Gray);
 
-			spritebatch.Draw(_pixel, new Rectangle(_sizeName + 10, 5, _lifeBarSize, _height - 10), Color.Peru);
+			//Name
+			spritebatch.DrawString(_font, _player.Name, new Vector2(_startName, 0), Color.Gray);
+			//BackGroung LifeBar
+			spritebatch.Draw(_pixel, new Rectangle(_startLifeBar, 5, _lifeBarSize, _height - 10), Color.Red * 0.3f);
+			//ForeGroundLifeBar
 			spritebatch.Draw(_pixel,
-							new Rectangle(_sizeName + 10, 5, (int)(_life / _player.MaxLife * _lifeBarSize), _height - 10)
+							new Rectangle(_startLifeBar, 5, (int)((float)_life / _player.MaxLife * _lifeBarSize), _height - 10)
 							, Color.Red);
-			spritebatch.DrawString(_font, _life.ToString("#"), new Vector2(_sizeName + 10 + _life / _player.MaxLife * _lifeBarSize, 2), Color.Gray);
-
-			spritebatch.DrawString(_font, string.Format("{0}{1}", _money, _player.Currency), new Vector2(_sizeName + _lifeBarSize + 60, 2), Color.Gray);
-
+			//Life
+			spritebatch.DrawString(_font, _life.ToString("0"), new Vector2(_startLife, 2), Color.Gray);
+			//Money
+			spritebatch.DrawString(_font, string.Format("{0}{1}", _money, _player.Currency), new Vector2(_startMoney, 2), Color.Gray);
+			//Speed
+			spritebatch.DrawString(_font, string.Format("{0}{1}", ShipGroup.Speed.ToString("0.##"), "x"), new Vector2(_startSpeed, 2), Color.Gray);
 		}
 	}
 }

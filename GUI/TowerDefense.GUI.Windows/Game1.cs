@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +19,7 @@ namespace TowerDefense.GUI.Windows
 	/// </summary>
 	public class Game1 : Game
 	{
+		private readonly bool _fancyMouse;
 		private readonly GraphicsDeviceManager _graphics;
 		private SpriteBatch _spriteBatch;
 		private readonly Dictionary<Tower, Texture2D> _towerTextures;
@@ -33,10 +35,22 @@ namespace TowerDefense.GUI.Windows
 		private Texture2D _informationTexture;
 		private readonly Player _player;
 
-		public Game1(string name, int money, int size, bool fullscreen)
+		public Game1(string name, int money, int size, bool fullscreen, bool fancyMouse)
 		{
+			_fancyMouse = fancyMouse;
 			_graphics = new GraphicsDeviceManager(this) {IsFullScreen = fullscreen};
 			Content.RootDirectory = "Content";
+			if(fancyMouse)
+			{
+				IsMouseVisible = false;
+				var cursor = new Cursor(this, 30)
+					{
+						BorderColor = Color.White,
+						BorderSize = 2,
+						FillColor = Color.Black
+					};
+				Components.Add(cursor);
+			}
 
 			_towerTextures = new Dictionary<Tower, Texture2D>();
 			_menu = new CircularMenu(size * 2);
@@ -106,6 +120,37 @@ namespace TowerDefense.GUI.Windows
 				Exit();
 			}
 
+			//Stop
+			if (InputEvent.KeyboardClick(Keys.OemQuotes))
+				ShipGroup.SpeedIndex = 0;
+			//Speed 0.5 -> 10
+			else if (InputEvent.KeyboardClick(Keys.D1))
+				ShipGroup.SpeedIndex = 1;
+			else if (InputEvent.KeyboardClick(Keys.D2))
+				ShipGroup.SpeedIndex = 2;
+			else if (InputEvent.KeyboardClick(Keys.D3))
+				ShipGroup.SpeedIndex = 3;
+			else if (InputEvent.KeyboardClick(Keys.D4))
+				ShipGroup.SpeedIndex = 4;
+			else if (InputEvent.KeyboardClick(Keys.D5))
+				ShipGroup.SpeedIndex = 5;
+			//Speed - 1
+			else if (InputEvent.KeyboardClick(Keys.D6))
+				ShipGroup.SpeedIndex--;
+			//Speed + 1
+			else if (InputEvent.KeyboardClick(Keys.D7))
+				ShipGroup.SpeedIndex++;
+
+			if (InputEvent.KeyboardClick(Keys.F10))
+			{
+				if (_fancyMouse)
+				{
+					IsMouseVisible = !IsMouseVisible;
+					_graphics.ApplyChanges();
+				}
+			}
+
+			ShipGroup.StaticUpdate();
 			_board.Update();
 
 			if (_board.SelectedCell != null)

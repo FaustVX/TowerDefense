@@ -32,14 +32,14 @@ namespace TowerDefense.GUI.Windows
 			{
 				Application.EnableVisualStyles();
 				Application.SetCompatibleTextRenderingDefault(false);
-				Application.Run(new StartPage((nom, money, size, fullscreen, mode) =>
+				Application.Run(new StartPage((nom, money, size, fullscreen, mode, fancy) =>
 					{
-						using (var game = new Game1(nom, money, size, fullscreen))
+						using (var game = new Game1(nom, money, size, fullscreen, fancy))
 							game.Run();
 					}));
 			}
 			else
-				using (var game = new Game1("FaustVX", 100, 20, false))
+				using (var game = new Game1("FaustVX", 100, 20, false, true))
 					game.Run();
 		}
 	}

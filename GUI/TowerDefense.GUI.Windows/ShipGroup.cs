@@ -16,9 +16,24 @@ namespace TowerDefense.GUI.Windows
 		private readonly int _lenght;
 		private static readonly Dictionary<Textures.Ship, Texture2D> _textures;
 		private readonly List<Ship> _ships;
+		private static readonly float[] speeds;
+		private static int speed;
+		private static float realSpeed;
 
 		static ShipGroup()
 		{
+			speeds = new float[]
+				{
+					0,
+					0.5f,
+					1f,
+					2f,
+					5f,
+					10f
+				};
+			speed = 2;
+			realSpeed = Speed;
+
 			_textures = new Dictionary<Textures.Ship, Texture2D>();
 		}
 
@@ -42,14 +57,46 @@ namespace TowerDefense.GUI.Windows
 			get { return _lenght; }
 		}
 
+		public static float Speed
+		{
+			get { return realSpeed; }
+		}
+
+		public static int SpeedIndex
+		{
+			get { return speed; }
+			set
+			{
+				if (value < 0 || value >= speeds.Length)
+					return;
+				speed = value;
+			}
+		}
+
 		public static void LoadContent(ContentManager content)
 		{
 			_textures.Add(Textures.Ship.Ship1, content.Load<Texture2D>(@"Ship/Ship1"));
 			_textures.Add(Textures.Ship.Ship2, content.Load<Texture2D>(@"Ship/Ship2"));
 		}
 
+		public static void StaticUpdate()
+		{
+			var v = speeds[speed];
+			if (Math.Abs(realSpeed - v) > 0.2f)
+			{
+				if (realSpeed < v)
+					realSpeed += 0.2f;
+				else
+					realSpeed -= 0.2f;
+			}
+			else
+				realSpeed = v;
+		}
+
 		public void Update()
 		{
+			if (Speed == 0)
+				return;
 			for (int i = 0; i < _lenght; i++)
 			{
 				var ship = _ships[i];
@@ -58,8 +105,10 @@ namespace TowerDefense.GUI.Windows
 				if (ship.IsDead)
 					_ships[i] = null;
 
+				var speed = ship.Speed * Speed;
+
 #if !DEBUG
-				ship.Position = new Vector2(ship.Position.X + ship.Speed, ship.Position.Y);
+				ship.Position = new Vector2(ship.Position.X + speed, ship.Position.Y);
 #else
 				float offsetx = 0, offsety = 0;
 				//Left Right
@@ -93,13 +142,13 @@ namespace TowerDefense.GUI.Windows
 						break;
 				}
 
-				Grid.DirectionalCell cell =
+				var cell =
 					_path.FirstOrDefault(c =>
 										Math.Abs(c.Cell.X - (ship.Position.X)) < 0.5f &&
 										Math.Abs(c.Cell.Y - (ship.Position.Y)) < 0.5f);
 				if (cell.Cell == null)
 				{
-					ship.Position = new Vector2(ship.Position.X + ship.Speed, ship.Position.Y);
+					ship.Position = new Vector2(ship.Position.X + speed, ship.Position.Y);
 					continue;
 				}
 				ship.Direction = cell.Direction;
@@ -110,12 +159,12 @@ namespace TowerDefense.GUI.Windows
 					case Direction.Right:
 					case Direction.DownRight:
 					case Direction.Stay:
-						ship.Position = new Vector2(ship.Position.X + ship.Speed, ship.Position.Y);
+						ship.Position = new Vector2(ship.Position.X + speed, ship.Position.Y);
 						break;
 					case Direction.UpLeft:
 					case Direction.Left:
 					case Direction.DownLeft:
-						ship.Position = new Vector2(ship.Position.X - ship.Speed, ship.Position.Y);
+						ship.Position = new Vector2(ship.Position.X - speed, ship.Position.Y);
 						break;
 				}
 
@@ -125,12 +174,12 @@ namespace TowerDefense.GUI.Windows
 					case Direction.DownLeft:
 					case Direction.Down:
 					case Direction.DownRight:
-						ship.Position = new Vector2(ship.Position.X, ship.Position.Y + ship.Speed);
+						ship.Position = new Vector2(ship.Position.X, ship.Position.Y + speed);
 						break;
 					case Direction.UpLeft:
 					case Direction.Up:
 					case Direction.UpRight:
-						ship.Position = new Vector2(ship.Position.X, ship.Position.Y - ship.Speed);
+						ship.Position = new Vector2(ship.Position.X, ship.Position.Y - speed);
 						break;
 				}
 				
