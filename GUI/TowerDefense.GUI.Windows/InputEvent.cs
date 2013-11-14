@@ -15,6 +15,12 @@ namespace TowerDefense.GUI.Windows
 		X2
 	}
 
+	public enum ClickEvent
+	{
+		OnReleased,
+		OnPressed
+	}
+
 	public static class InputEvent
 	{
 		#region Attributs
@@ -35,6 +41,7 @@ namespace TowerDefense.GUI.Windows
 			oldMouseState = Mouse.GetState();
 			oldKeyboardState = Keyboard.GetState();
 		}
+
 		#endregion
 
 		#region Propriete
@@ -57,6 +64,7 @@ namespace TowerDefense.GUI.Windows
 		{
 			get { return oldKeyboardState; }
 		}
+
 		#endregion
 
 		#region Methodes
@@ -102,7 +110,7 @@ namespace TowerDefense.GUI.Windows
 			return keyboardState.IsKeyUp(key);
 		}
 
-		public static bool MouseClick(MouseButton button)
+		public static bool MouseClick(MouseButton button, ClickEvent clickEvent = ClickEvent.OnReleased)
 		{
 			ButtonState old, curent;
 
@@ -111,33 +119,49 @@ namespace TowerDefense.GUI.Windows
 				case MouseButton.Left:
 					old = oldMouseState.LeftButton;
 					curent = mouseState.LeftButton;
-					break;
+				break;
 				case MouseButton.Middle:
-					old = oldMouseState.LeftButton;
-					curent = mouseState.LeftButton;
-					break;
+					old = oldMouseState.MiddleButton;
+					curent = mouseState.MiddleButton;
+				break;
 				case MouseButton.Right:
-					old = oldMouseState.LeftButton;
-					curent = mouseState.LeftButton;
-					break;
+					old = oldMouseState.RightButton;
+					curent = mouseState.RightButton;
+				break;
 				case MouseButton.X1:
-					old = oldMouseState.LeftButton;
-					curent = mouseState.LeftButton;
-					break;
+					old = oldMouseState.XButton1;
+					curent = mouseState.XButton1;
+				break;
 				case MouseButton.X2:
-					old = oldMouseState.LeftButton;
-					curent = mouseState.LeftButton;
-					break;
+					old = oldMouseState.XButton2;
+					curent = mouseState.XButton2;
+				break;
 				default:
 					throw new ArgumentOutOfRangeException("button");
 			}
 
-			return old == ButtonState.Pressed && curent == ButtonState.Released;
+			switch (clickEvent)
+			{
+				case ClickEvent.OnReleased:
+					return old == ButtonState.Pressed && curent == ButtonState.Released;
+				case ClickEvent.OnPressed:
+					return old == ButtonState.Released && curent == ButtonState.Pressed;
+				default:
+					throw new ArgumentOutOfRangeException("clickEvent");
+			}
 		}
 
-		public static bool KeyboardClick(Keys key)
+		public static bool KeyboardClick(Keys key, ClickEvent clickEvent = ClickEvent.OnReleased)
 		{
-			return oldKeyboardState.IsKeyDown(key) && keyboardState.IsKeyUp(key);
+			switch (clickEvent)
+			{
+				case ClickEvent.OnReleased:
+					return oldKeyboardState.IsKeyDown(key) && keyboardState.IsKeyUp(key);
+				case ClickEvent.OnPressed:
+					return oldKeyboardState.IsKeyUp(key) && keyboardState.IsKeyDown(key);
+				default:
+					throw new ArgumentOutOfRangeException("clickEvent");
+			}
 		}
 
 		public static bool HasScrolled()

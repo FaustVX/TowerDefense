@@ -18,7 +18,7 @@ namespace TowerDefense.GUI.Windows
 		private readonly List<Ship> _ships;
 		private static readonly float[] speeds;
 		private static int speed;
-		private static float realSpeed;
+		private static float realRealSpeed;
 
 		static ShipGroup()
 		{
@@ -32,7 +32,7 @@ namespace TowerDefense.GUI.Windows
 					10f
 				};
 			speed = 2;
-			realSpeed = Speed;
+			realRealSpeed = RealSpeed;
 
 			_textures = new Dictionary<Textures.Ship, Texture2D>();
 		}
@@ -59,7 +59,12 @@ namespace TowerDefense.GUI.Windows
 
 		public static float Speed
 		{
-			get { return realSpeed; }
+			get { return speeds[speed]; }
+		}
+
+		public static float RealSpeed
+		{
+			get { return realRealSpeed; }
 		}
 
 		public static int SpeedIndex
@@ -82,20 +87,20 @@ namespace TowerDefense.GUI.Windows
 		public static void StaticUpdate()
 		{
 			var v = speeds[speed];
-			if (Math.Abs(realSpeed - v) > 0.2f)
+			if (Math.Abs(realRealSpeed - v) > 0.2f)
 			{
-				if (realSpeed < v)
-					realSpeed += 0.2f;
+				if (realRealSpeed < v)
+					realRealSpeed += 0.2f;
 				else
-					realSpeed -= 0.2f;
+					realRealSpeed -= 0.2f;
 			}
 			else
-				realSpeed = v;
+				realRealSpeed = v;
 		}
 
 		public void Update()
 		{
-			if (Speed == 0)
+			if (RealSpeed == 0)
 				return;
 			for (int i = 0; i < _lenght; i++)
 			{
@@ -105,7 +110,7 @@ namespace TowerDefense.GUI.Windows
 				if (ship.IsDead)
 					_ships[i] = null;
 
-				var speed = ship.Speed * Speed;
+				var speed = ship.Speed * RealSpeed;
 
 #if !DEBUG
 				ship.Position = new Vector2(ship.Position.X + speed, ship.Position.Y);

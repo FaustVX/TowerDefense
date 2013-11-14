@@ -43,11 +43,14 @@ namespace TowerDefense.GUI.Windows
 			if(fancyMouse)
 			{
 				IsMouseVisible = false;
-				var cursor = new Cursor(this, 30)
+				var cursor = new Cursor(this, 40)
 					{
 						BorderColor = Color.White,
 						BorderSize = 2,
-						FillColor = Color.Black
+						FillColor = Color.GreenYellow,
+						StartScale = 0.25f,
+						EndScale = 0f,
+						TrailNodeMass=12f
 					};
 				Components.Add(cursor);
 			}
@@ -114,16 +117,21 @@ namespace TowerDefense.GUI.Windows
 			InputEvent.Update();
 
 			if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
-				InputEvent.IsKeyDown(Keys.Escape))
+				InputEvent.KeyboardClick(Keys.Escape))
 			{
-				_board.Running = false;
-				Exit();
+				if (CircularMenu.Opened)
+					_menu.Close();
+				else
+				{
+					_board.Running = false;
+					Exit();
+				}
 			}
 
 			//Stop
-			if (InputEvent.KeyboardClick(Keys.OemQuotes))
+			if (InputEvent.KeyboardClick(Keys.OemQuotes, ClickEvent.OnPressed))
 				ShipGroup.SpeedIndex = 0;
-			//Speed 0.5 -> 10
+				//Speed 0.5 -> 10
 			else if (InputEvent.KeyboardClick(Keys.D1))
 				ShipGroup.SpeedIndex = 1;
 			else if (InputEvent.KeyboardClick(Keys.D2))
@@ -134,21 +142,16 @@ namespace TowerDefense.GUI.Windows
 				ShipGroup.SpeedIndex = 4;
 			else if (InputEvent.KeyboardClick(Keys.D5))
 				ShipGroup.SpeedIndex = 5;
-			//Speed - 1
+				//Speed - 1
 			else if (InputEvent.KeyboardClick(Keys.D6))
 				ShipGroup.SpeedIndex--;
-			//Speed + 1
+				//Speed + 1
 			else if (InputEvent.KeyboardClick(Keys.D7))
 				ShipGroup.SpeedIndex++;
 
 			if (InputEvent.KeyboardClick(Keys.F10))
-			{
 				if (_fancyMouse)
-				{
 					IsMouseVisible = !IsMouseVisible;
-					_graphics.ApplyChanges();
-				}
-			}
 
 			ShipGroup.StaticUpdate();
 			_board.Update();
@@ -161,7 +164,7 @@ namespace TowerDefense.GUI.Windows
 				}
 				else if (!CircularMenu.Opened)
 				{
-					if (InputEvent.MouseState.LeftButton== ButtonState.Pressed)
+					if (InputEvent.MouseClick( MouseButton.Left, ClickEvent.OnPressed))
 					{
 						_menu.Clear();
 						_menu.Add(new MenuElement(_towerTextures[Tower.Direction], () => { }, "Retour", ""));
